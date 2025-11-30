@@ -101,3 +101,24 @@ class BST:
                 node.value = succ.value
                 node.right = self.delete(node.right, succ.value)
         return node
+
+    def preorder_traversal(self, start, traversal=""):
+        if start:
+            traversal += (str(start.value) + " ")
+            traversal = self.preorder_traversal(start.left, traversal)
+            traversal = self.preorder_traversal(start.right, traversal)
+        return traversal
+
+    def inorder_traversal(self, start, traversal=""):
+        if start:
+            traversal = self.inorder_traversal(start.left, traversal)
+            traversal += (str(start.value) + " ")
+            traversal = self.inorder_traversal(start.right, traversal)
+        return traversal
+    
+    def postorder_traversal(self, start, traversal=""):
+        if start:
+            traversal = self.postorder_traversal(start.left, traversal)
+            traversal = self.postorder_traversal(start.right, traversal)
+            traversal += str(start.value) + " "
+        return traversal
