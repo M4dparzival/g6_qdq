@@ -31,9 +31,9 @@ class BST:
             return node
         
         elif node.value < target:
-            return self.search(node.right, target)
+            return self.search(target, node.right)
         else:
-            return self.search(node.left, target)
+            return self.search(target, node.left)
     
     def get_min(self, node=None):
         if node is None:
@@ -86,9 +86,9 @@ class BST:
             return None
 
         if value < node.value:
-            node.left = self.delete(node.left, value)
+            node.left = self.delete(value, node.left)
         elif value > node.value:
-            node.right = self.delete(node.right, value)
+            node.right = self.delete(value, node.right)
         else:
             # Node found
             if node.left is None:
