@@ -24,6 +24,9 @@
                             <option value="preorder_traversal" {% if request.form.get('operation') == 'preorder_traversal' %}selected{% endif %}>Pre-order Traversal</option>
                             <option value="inorder_traversal" {% if request.form.get('operation') == 'inorder_traversal' %}selected{% endif %}>In-order Traversal</option>
                             <option value="postorder_traversal" {% if request.form.get('operation') == 'postorder_traversal' %}selected{% endif %}>Post-order Traversal</option>
+                            <option value="get_min" {% if request.form.get('operation') == 'get_min' %}selected{% endif %}>Get Minimum</option>
+                            <option value="get_max" {% if request.form.get('operation') == 'get_max' %}selected{% endif %}>Get Maximum</option>
+                            <option value="find_height" {% if request.form.get('operation') == 'find_height' %}selected{% endif %}>Find Height</option>
                         </select>
                     </div>
                 </div>
@@ -46,6 +49,15 @@
             {% if traversal_result %}
                 <p class="traversal_result">{{ traversal_result }}</p>
             {% endif %}
+            {% if min_result %}
+                <p class="traversal_result">Minimum value: {{ min_result }}</p>
+            {% endif %}
+            {% if max_result %}
+                <p class="traversal_result">Maximum value: {{ max_result }}</p>
+            {% endif %}
+            {% if height_result %}
+                <p class="traversal_result">Height: {{ height_result }}</p>
+            {% endif %}
 
             <!-- Tree Visualization -->
             <div class="tree-container" id="treeCanvas">
@@ -61,7 +73,7 @@
     function toggleInputFields() {
         const operation = document.getElementById('operation').value;
         const dataField = document.getElementById('data-field');
-        if (operation === 'preorder_traversal' || operation === 'inorder_traversal' || operation === 'postorder_traversal') {
+        if (["preorder_traversal","inorder_traversal","postorder_traversal","get_min","get_max","find_height"].includes(operation)) {
             dataField.style.display = 'none';
         } else {
             dataField.style.display = 'block';
@@ -69,7 +81,7 @@
     }
     document.addEventListener('DOMContentLoaded', toggleInputFields);
 
-    // Draw tree visualization with zoom and pan
+    // Tree visualization code (unchanged)
     (function drawTreeIfAny() {
         var canvas = document.getElementById('tree-canvas');
         if (!canvas) return;
