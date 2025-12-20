@@ -1,5 +1,5 @@
-from flask import Flask, request, render_template, session
-from algorithms import deque, queue, binarytree, binarysearchtree
+from flask import Flask, request, render_template, session, jsonify
+from algorithms import deque, queue, binarytree, binarysearchtree, graph as graph_module
 import os
 
 app = Flask(__name__)
@@ -322,6 +322,181 @@ def bst():
 
     tree_data = session['bst']
     return render_template('binarysearchtree.html', tree=tree_data, message=message, traversal_result=traversal_result, search_result=search_result)
+
+@app.route('/graph', methods=['GET', 'POST'])
+def graph():
+    message = ""
+    result = ""
+    graph_data = None
+
+    if request.method == 'GET':
+        session['graph'] = {}
+
+    if 'graph' not in session:
+        session['graph'] = {}
+
+    if request.method == 'POST':
+        operation = request.form.get('operation')
+        value = request.form.get('value', '').strip()
+        action = request.form.get('action')
+
+        # Handle clear action
+        if action == 'clear':
+            session['graph'] = {}
+            session.modified = True
+            message = "Graph cleared successfully"
+            return render_template('graph.html', graph=None, message=message)
+
+        g = graph.Graph()
+        # Rebuild graph from session data
+        for vertex in session['graph']:
+            g.add_vertex(vertex)
+        for source, neighbors in session['graph'].items():
+            for target in neighbors:
+                g.add_edge(source, target)
+
+        if operation == 'add_vertex' and value:
+            g.add_vertex(value)
+            message = f"Added vertex {value}"
+        elif operation == 'add_edge' and value:
+            target = request.form.get('target', '').strip()
+            if target:
+                g.add_edge(value, target)
+                message = f"Added edge from {value} to {target}"
+            else:
+                message = "Target vertex required for add_edge"
+        elif operation == 'get_neighbors' and value:
+            neighbors = g.get_neighbors(value)
+            result = f"Neighbors of {value}: {neighbors}"
+        elif operation == 'bfs_shortest_path' and value:
+            goal = request.form.get('goal', '').strip()
+            if goal:
+                path = g.bfs_shortest_path(value, goal)
+                if path:
+                    result = f"Shortest path from {value} to {goal}: {path}"
+                else:
+                    result = f"No path found from {value} to {goal}"
+            else:
+                message = "Goal vertex required for BFS shortest path"
+
+        # Save updated graph back to session
+        session['graph'] = g.adj_list
+        session.modified = True
+
+    graph_data = session['graph']
+    return render_template('graph.html', graph=graph_data, message=message, result=result)
+
+@app.route('/mrt_map', methods=['GET', 'POST'])
+def mrt_map():
+    stations = [
+        # MRT-3: Vertical line from North to South along EDSA
+        {'name': 'North Avenue', 'x': 600, 'y': 50, 'line': 'MRT-3', 'color': 'blue'},
+        {'name': 'Quezon Avenue', 'x': 600, 'y': 130, 'line': 'MRT-3', 'color': 'blue'},
+        {'name': 'GMA Kamuning', 'x': 600, 'y': 210, 'line': 'MRT-3', 'color': 'blue'},
+        {'name': 'Araneta Center-Cubao', 'x': 690, 'y': 290, 'line': 'MRT-3', 'color': 'blue'},
+        {'name': 'Santolan-Annapolis', 'x': 600, 'y': 370, 'line': 'MRT-3', 'color': 'blue'},
+        {'name': 'Ortigas', 'x': 600, 'y': 450, 'line': 'MRT-3', 'color': 'blue'},
+        {'name': 'Shaw Boulevard', 'x': 600, 'y': 530, 'line': 'MRT-3', 'color': 'blue'},
+        {'name': 'Boni', 'x': 600, 'y': 610, 'line': 'MRT-3', 'color': 'blue'},
+        {'name': 'Guadalupe', 'x': 600, 'y': 690, 'line': 'MRT-3', 'color': 'blue'},
+        {'name': 'Buendia', 'x': 600, 'y': 770, 'line': 'MRT-3', 'color': 'blue'},
+        {'name': 'Ayala', 'x': 600, 'y': 850, 'line': 'MRT-3', 'color': 'blue'},
+        {'name': 'Magallanes', 'x': 600, 'y': 930, 'line': 'MRT-3', 'color': 'blue'},
+        {'name': 'Taft Avenue', 'x': 600, 'y': 1010, 'line': 'MRT-3', 'color': 'blue'},
+        # LRT-1: Vertical line from North to South
+        {'name': 'Fernando Poe Jr.', 'x': 200, 'y': 50, 'line': 'LRT-1', 'color': 'yellow'},
+        {'name': 'Balintawak', 'x': 200, 'y': 90, 'line': 'LRT-1', 'color': 'yellow'},
+        {'name': 'Monumento', 'x': 200, 'y': 130, 'line': 'LRT-1', 'color': 'yellow'},
+        {'name': '5th Avenue', 'x': 200, 'y': 170, 'line': 'LRT-1', 'color': 'yellow'},
+        {'name': 'R. Papa', 'x': 200, 'y': 210, 'line': 'LRT-1', 'color': 'yellow'},
+        {'name': 'Abad Santos', 'x': 200, 'y': 250, 'line': 'LRT-1', 'color': 'yellow'},
+        {'name': 'Blumentritt', 'x': 200, 'y': 290, 'line': 'LRT-1', 'color': 'yellow'},
+        {'name': 'Tayuman', 'x': 200, 'y': 330, 'line': 'LRT-1', 'color': 'yellow'},
+        {'name': 'Bambang', 'x': 200, 'y': 370, 'line': 'LRT-1', 'color': 'yellow'},
+        {'name': 'Doroteo Jose', 'x': 200, 'y': 410, 'line': 'LRT-1', 'color': 'yellow'},
+        {'name': 'Carriedo', 'x': 200, 'y': 450, 'line': 'LRT-1', 'color': 'yellow'},
+        {'name': 'Central Terminal', 'x': 200, 'y': 490, 'line': 'LRT-1', 'color': 'yellow'},
+        {'name': 'United Nations', 'x': 200, 'y': 530, 'line': 'LRT-1', 'color': 'yellow'},
+        {'name': 'Pedro Gil', 'x': 200, 'y': 570, 'line': 'LRT-1', 'color': 'yellow'},
+        {'name': 'Quirino', 'x': 200, 'y': 610, 'line': 'LRT-1', 'color': 'yellow'},
+        {'name': 'Vito Cruz', 'x': 200, 'y': 650, 'line': 'LRT-1', 'color': 'yellow'},
+        {'name': 'Gil Puyat', 'x': 200, 'y': 690, 'line': 'LRT-1', 'color': 'yellow'},
+        {'name': 'Libertad', 'x': 200, 'y': 730, 'line': 'LRT-1', 'color': 'yellow'},
+        {'name': 'EDSA', 'x': 200, 'y': 770, 'line': 'LRT-1', 'color': 'yellow'},
+        {'name': 'Baclaran', 'x': 200, 'y': 810, 'line': 'LRT-1', 'color': 'yellow'},
+        {'name': 'Redemptorist-Aseana', 'x': 200, 'y': 850, 'line': 'LRT-1', 'color': 'yellow'},
+        {'name': 'MIA', 'x': 200, 'y': 890, 'line': 'LRT-1', 'color': 'yellow'},
+        {'name': 'PITX', 'x': 200, 'y': 930, 'line': 'LRT-1', 'color': 'yellow'},
+        {'name': 'Ninoy Aquino Avenue', 'x': 200, 'y': 970, 'line': 'LRT-1', 'color': 'yellow'},
+        {'name': 'Dr. Santos', 'x': 200, 'y': 1010, 'line': 'LRT-1', 'color': 'yellow'},
+        # LRT-2: Horizontal line from West to East at y=290
+        {'name': 'Recto', 'x': 200, 'y': 290, 'line': 'LRT-2', 'color': 'purple'},
+        {'name': 'Legarda', 'x': 270, 'y': 290, 'line': 'LRT-2', 'color': 'purple'},
+        {'name': 'Pureza', 'x': 340, 'y': 290, 'line': 'LRT-2', 'color': 'purple'},
+        {'name': 'V. Mapa', 'x': 410, 'y': 290, 'line': 'LRT-2', 'color': 'purple'},
+        {'name': 'J. Ruiz', 'x': 480, 'y': 290, 'line': 'LRT-2', 'color': 'purple'},
+        {'name': 'Gilmore', 'x': 550, 'y': 290, 'line': 'LRT-2', 'color': 'purple'},
+        {'name': 'Betty Go-Belmonte', 'x': 620, 'y': 290, 'line': 'LRT-2', 'color': 'purple'},
+        {'name': 'Araneta Center-Cubao', 'x': 690, 'y': 290, 'line': 'LRT-2', 'color': 'purple'},
+        {'name': 'Anonas', 'x': 760, 'y': 290, 'line': 'LRT-2', 'color': 'purple'},
+        {'name': 'Katipunan', 'x': 830, 'y': 290, 'line': 'LRT-2', 'color': 'purple'},
+        {'name': 'Santolan', 'x': 900, 'y': 290, 'line': 'LRT-2', 'color': 'purple'},
+        {'name': 'Marikina-Pasig', 'x': 970, 'y': 290, 'line': 'LRT-2', 'color': 'purple'},
+        {'name': 'Antipolo', 'x': 1040, 'y': 290, 'line': 'LRT-2', 'color': 'purple'},
+    ]
+
+    if request.method == 'POST':
+        try:
+            data = request.get_json()
+            if not data:
+                return jsonify({'error': 'Invalid JSON data'}), 400
+
+            start = data.get('start')
+            goal = data.get('goal')
+
+            if not start or not goal:
+                return jsonify({'error': 'Start and goal stations are required'}), 400
+
+            g = graph_module.Graph()
+            for s in stations:
+                g.add_vertex(s['name'])
+
+            # MRT-3
+            mrt3 = ["North Avenue", "Quezon Avenue", "GMA Kamuning", "Araneta Center-Cubao", "Santolan-Annapolis", "Ortigas", "Shaw Boulevard", "Boni", "Guadalupe", "Buendia", "Ayala", "Magallanes", "Taft Avenue"]
+            for i in range(len(mrt3) - 1):
+                g.add_edge(mrt3[i], mrt3[i + 1])
+
+            # LRT-1: North to South
+            lrt1 = ["Fernando Poe Jr.", "Balintawak", "Monumento", "5th Avenue", "R. Papa", "Abad Santos", "Blumentritt", "Tayuman", "Bambang", "Doroteo Jose", "Carriedo", "Central Terminal", "United Nations", "Pedro Gil", "Quirino", "Vito Cruz", "Gil Puyat", "Libertad", "EDSA", "Baclaran", "Redemptorist-Aseana", "PITX", "Dr. Santos"]
+            for i in range(len(lrt1) - 1):
+                g.add_edge(lrt1[i], lrt1[i + 1])
+
+            # LRT-2: West to East
+            lrt2 = ["Recto", "Legarda", "Pureza", "V. Mapa", "J. Ruiz", "Gilmore", "Betty Go-Belmonte", "Araneta Center-Cubao", "Anonas", "Katipunan", "Santolan", "Marikina-Pasig", "Antipolo"]
+            for i in range(len(lrt2) - 1):
+                g.add_edge(lrt2[i], lrt2[i + 1])
+
+            # Add transfer connections
+            g.add_edge("North Avenue", "North Avenue")  # LRT-1 to MRT-3 transfer at North Avenue
+            g.add_edge("Recto", "Doroteo Jose")  # LRT-2 to LRT-1 transfer at Recto-Doroteo Jose
+            g.add_edge("Araneta Center-Cubao", "Araneta Center-Cubao")  # MRT-3 to LRT-2 transfer (same station name)
+            g.add_edge("EDSA", "Taft Avenue")  # LRT-1 to MRT-3 transfer at EDSA
+
+            if start not in g.adj_list:
+                return jsonify({'error': f'Start station "{start}" not found'}), 400
+            if goal not in g.adj_list:
+                return jsonify({'error': f'Goal station "{goal}" not found'}), 400
+
+            path = g.bfs_shortest_path(start, goal)
+            if path is None:
+                return jsonify({'error': f'No path found from {start} to {goal}'}), 400
+
+            return jsonify({'path': path})
+
+        except Exception as e:
+            return jsonify({'error': f'Server error: {str(e)}'}), 500
+
+    return render_template('mrt_map.html', stations=stations)
 
 @app.route('/contact')
 def contact():

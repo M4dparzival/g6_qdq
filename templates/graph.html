@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<title>Graph</title>
+{% endblock %}
+
+{% block body %}
+<div class="works page-bg">
+    <div class="work-detail-section">
+        <h1>GRAPH</h1>
+        <div class="io-box">
+            <form action="/graph" method="post">
+                <div class="container">
+                    <div id="data-field">
+                        <label for="value">Enter Value</label>
+                        <input type="text" id="value" name="value" value="{{ request.form.value }}">
+                    </div>
+                    <div id="target-field" style="display: none;">
+                        <label for="target">Target Vertex</label>
+                        <input type="text" id="target" name="target" value="{{ request.form.target }}">
+                    </div>
+                    <div id="goal-field" style="display: none;">
+                        <label for="goal">Goal Vertex</label>
+                        <input type="text" id="goal" name="goal" value="{{ request.form.goal }}">
+                    </div>
+                    <div class="operation-field">
+                        <label for="operation">Operation</label>
+                        <select name="operation" id="operation" onchange="toggleInputFields();">
+                            <option value="add_vertex" {% if request.form.get('operation') == 'add_vertex' %}selected{% endif %}>Add Vertex</option>
+                            <option value="add_edge" {% if request.form.get('operation') == 'add_edge' %}selected{% endif %}>Add Edge</option>
+                            <option value="get_neighbors" {% if request.form.get('operation') == 'get_neighbors' %}selected{% endif %}>Get Neighbors</option>
+                            <option value="bfs_shortest_path" {% if request.form.get('operation') == 'bfs_shortest_path' %}selected{% endif %}>BFS Shortest Path</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 10px; justify-content: center;">
+                    <input type="submit" value="Execute" style="padding: 10px 30px; background-color: #ffffff; color: rgb(0, 0, 0); border: 2px solid rgb(255, 255, 255); border-radius: 4px; cursor: pointer; font-weight: bold;">
+                    <button type="submit" name="action" value="clear" style="padding: 10px 30px; background-color: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Clear Graph</button>
+                </div>
+            </form>
+
+            {% if message %}
+                <p class="message">{{ message }}</p>
+            {% endif %}
+            {% if result %}
+                <p class="result">{{ result }}</p>
+            {% endif %}
+
+            <!-- Graph Visualization -->
+            <div class="graph-container" id="graphCanvas">
+                <canvas id="graph-canvas" 
+                    data-graph='{% if graph %}{{ graph | tojson | safe }}{% else %}""{% endif %}'></canvas>
+                <p id="empty-note" class="empty-graph-note">Graph is empty. Add vertices and edges to visualize.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleInputFields() {
+        const operation = document.getElementById('operation').value;
+        const dataField = document.getElementById('data-field');
+        const targetField = document.getElementById('target-field');
+        const goalField = document.getElementById('goal-field');
+        if (operation === 'add_edge') {
+            dataField.style.display = 'block';
+            targetField.style.display = 'block';
+            goalField.style.display = 'none';
+        } else if (operation === 'bfs_shortest_path') {
+            dataField.style.display = 'block';
+            targetField.style.display = 'none';
+            goalField.style.display = 'block';
+        } else {
+            dataField.style.display = 'block';
+            targetField.style.display = 'none';
+            goalField.style.display = 'none';
+        }
+    }
+    document.addEventListener('DOMContentLoaded', toggleInputFields);
+
+    // Graph visualization code (simple text-based for now)
+    (function drawGraphIfAny() {
+        var canvas = document.getElementById('graph-canvas');
+        if (!canvas) return;
+        var data = canvas.getAttribute('data-graph');
+        if (!data || data === '""') {
+            document.getElementById('empty-note').style.display = 'block';
+            return;
+        }
+
+        try {
+            var graphData = JSON.parse(data);
+        } catch (e) {
+            console.error('Invalid graph JSON', e);
+            return;
+        }
+
+        var container = document.getElementById('graphCanvas');
+        var emptyNote = document.getElementById('empty-note');
+        if (emptyNote) emptyNote.style.display = 'none';
+
+        var ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.font = '16px Arial';
+        ctx.fillStyle = '#fff';
+        var y = 50;
+        for (var vertex in graphData) {
+            ctx.fillText(vertex + ': ' + graphData[vertex].join(', '), 50, y);
+            y += 30;
+        }
+    })();
+</script>
+{% endblock %}
